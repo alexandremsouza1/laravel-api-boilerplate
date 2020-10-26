@@ -276,7 +276,7 @@ class UserController extends Controller
     public function resetPasswordByAuth(Request $request)
     {
         $newDetails = $request->all();
-        $user = Auth::user();
+        $password = Auth::user()->password;
         $validator = Validator::make($newDetails, [
             'email' => 'required|email|exists:users,email',
             'password' => 'required|min:6',
@@ -288,8 +288,9 @@ class UserController extends Controller
             $error["code"] = 'VALIDATION_ERROR';
             return response()->json(["error" => $error], 400);
         } else {
-            if (Hash::check($newDetails["current_password"], $user->password)) {
+            if (Hash::check($newDetails["current_password"], $password)) {
                 // The passwords match...
+                $user = User::where('email', $newDetails['email'])->first();
                 $user['password'] = bcrypt($newDetails['password']);
                 $user->save();
                 Mail::to($user->email)->send(new PasswordResetSuccessful());
